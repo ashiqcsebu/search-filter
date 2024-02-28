@@ -1,6 +1,8 @@
 # search-filter
 
 
+# Data
+
 [
 {
 "_id": "64d67dcf65a8675955e1ff25",
@@ -72,8 +74,10 @@
 
 
 
+/////////////////////////////////////
 
-#Search doctors by location and Specialty Backend
+
+# Search doctors by location and Specialty Backend
 app.get('/search-doctor', async (req, res) => {
   try {
     const {
@@ -97,9 +101,9 @@ app.get('/search-doctor', async (req, res) => {
 
 
 
-////////////       ////////////////
+////////////      ////////////////// ////////////////
 
-## React front end
+# React front end
 
 
 import React, { useState, useEffect } from "react";
@@ -188,6 +192,9 @@ const SearchDoctor = () => {
 };
 
 export default SearchDoctor;
+
+
+/////////// Front end close ///////////////
 
 
 
