@@ -79,8 +79,7 @@ app.get('/search-doctor', async (req, res) => {
     const {
       search = "",
       location = "",
-    } = req.query;
-    
+    } = req.query; 
     const query = {};
     if (search) {
       query.specialty = { $regex: search, $options: "i" };
@@ -88,9 +87,7 @@ app.get('/search-doctor', async (req, res) => {
     if (location) {
       query.location = location;
     }
-  
     const doctors = await doctorsCollection.find(query).toArray();
-    
     res.json({ doctors });
   } catch (error) {
     console.log(error);
@@ -102,17 +99,14 @@ app.get('/search-doctor', async (req, res) => {
 
 ////////////       ////////////////
 
-##React front end
+## React front end
 
 
 import React, { useState, useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
-
 const SearchDoctor = () => {
-
   const [searchParams, setSearchParams] = useSearchParams();
   const [doctors, setDoctors] = useState([]);
-
   const [searchTerm, setSearchTerm] = useState(
     searchParams.get("search") || ""
   );
@@ -122,16 +116,13 @@ const SearchDoctor = () => {
     setSearchTerm(event.target.value);
     updateSearchParameters({ search: event.target.value });
   };
-
   const handleLocationChange = (event) => {
     setLocation(event.target.value);
     updateSearchParameters({ location: event.target.value });
   };
-
   const updateSearchParameters = (params) => {
     setSearchParams({ ...searchParams, ...params });
   };
-
   useEffect(() => {
     const fetchDoctors = async () => {
       try {
