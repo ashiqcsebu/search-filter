@@ -1,89 +1,11 @@
-# search-filter
-
-
-# Data
-
-[
-{
-"_id": "64d67dcf65a8675955e1ff25",
-"name": "Doctor Medicine Seven",
-"email": "d7@gmail.com",
-"specialty": "Medicine",
-"image": "https://i.ibb.co/HLyKcmF/doc3.jpg",
-"biodata": "MBBS (DMC), MRCS (England), FCPS (Medicine).Professor at Dhaka Medical College & Hospital, Dhaka.",
-"experience": 3
-},
-
-{
-"_id": "64d67dcf65a8675955e1ff27",
-"name": "Doctor Ear Eye and Throat Nine",
-"email": "d9@gmail.com",
-"specialty": "Ear Eye and Throat",
-"image": "https://i.ibb.co/qgcWHVG/doc4.jpg",
-"biodata": "MBBS (DMC), MRCS (England), FCPS (ENT).Assistant Professor at Khulna Medical College & Hospital, Dhaka.",
-"experience": 6,
-"location" : "Dhaka"
-},
-
-
-{
-"_id": "64d68ab965a8675955fba01e",
-"name": "Doctor Cardiologist Ten",
-"email": "d10@gmail.com",
-"specialty": "Cardiologist",
-"image": "https://i.ibb.co/HLyKcmF/doc3.jpg",
-"biodata": "MBBS (DMC), MRCS (USA), FCPS (Cardiology).Dhaka Medical College & Hospital, Dhaka.",
-"experience": 3,
-"location" : "Dhaka"
-},
-
-{
-"_id": "64d7e5aa204f50f6c20fa304",
-"name": "Doctor Urologist Eleven",
-"email": "d11@gmail.com",
-"specialty": "Urologist",
-"biodata": "MBBS (DMC), MRCS (England), FCPS (Urology). Associate Professor, Department of Urology, Popular Medical College & Hospital, Dhaka.",
-"image": "https://i.ibb.co/G51QQ73/doc8.jpg",
-"experience": 9,
-"location" : "Khulna"
-},
-
-
-{
-"_id": "64d7fd3f6b43c54bbb76980d",
-"name": "Doctor Cardiologist Seven",
-"email": "d7@gmail.com",
-"specialty": "Cardiologist",
-"biodata": "MBBS (DMC), MRCS (England), FCPS (Cardiology). Associate Professor, Department of Urology, Popular Medical College & Hospital, Dhaka.",
-"image": "https://i.ibb.co/jLXkYs5/doc9.jpg",
-"experience": 19
-},
-
-
-{
-"_id": "65de2be9c655661a45f3eb7f",
-"name": "Doctor Urologist Twenty",
-"email": "d20@gmail.com",
-"specialty": "Urologist",
-"biodata": "MBBS (DMC), MRCS (England), FCPS (Cardiology). Associate Professor, Department of Urology, Popular Medical College & Hospital, Dhaka.",
-"experience": "13",
-"location": "Barishal",
-"image": "https://i.ibb.co/hyq9kVw/13.png"
-}
-]
-
-
-
-/////////////////////////////////////
-
-
-# Search doctors by location and Specialty Backend
+// Search doctors by location
 app.get('/search-doctor', async (req, res) => {
   try {
     const {
       search = "",
       location = "",
-    } = req.query; 
+    } = req.query;
+    
     const query = {};
     if (search) {
       query.specialty = { $regex: search, $options: "i" };
@@ -91,7 +13,9 @@ app.get('/search-doctor', async (req, res) => {
     if (location) {
       query.location = location;
     }
+  
     const doctors = await doctorsCollection.find(query).toArray();
+    
     res.json({ doctors });
   } catch (error) {
     console.log(error);
@@ -100,17 +24,273 @@ app.get('/search-doctor', async (req, res) => {
 })
 
 
-
-////////////      ////////////////// ////////////////
-
-# React front end
+///////////////
 
 
-import React, { useState, useEffect } from "react";
+
+
+
+add doctor.js
+
+
+
+
+import { useQuery } from "@tanstack/react-query";
+import React from "react";
+import { useForm } from "react-hook-form";
+import toast from "react-hot-toast";
+import { useNavigate } from "react-router-dom";
+import Loading from "../../Shared/Loading/Loading";
+
+const AddDoctor = () => {
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+  } = useForm();
+
+  const imageHostKey = process.env.REACT_APP_imgbb_key;
+
+  const navigate = useNavigate();
+
+  const { data: specialties, isLoading } = useQuery({
+    queryKey: ["specialty"],
+    queryFn: async () => {
+      const res = await fetch("http://localhost:5000/appointmentSpecialty");
+      const data = await res.json();
+      // console.log(data);
+      return data;
+    },
+  });
+
+  const locations = [
+    { id: 1, location: "Dhaka" },
+    { id: 2, location: "Barishal" },
+    { id: 3, location: "Khulna" },
+    { id: 4, location: "Rajshahi" },
+    { id: 5, location: "Sylhet" },
+    { id: 6, location: "Chittagong" },
+    { id: 7, location: "Mymensing" },
+    { id: 8, location: "Rangpur" },
+
+  ];
+
+  const handleAddDoctor = (data) => {
+    const image = data.image[0];
+    const formData = new FormData();
+    formData.append("image", image);
+    const url = `https://api.imgbb.com/1/upload?key=${imageHostKey}`;
+    fetch(url, {
+      method: "POST",
+      body: formData,
+    })
+      .then((res) => res.json())
+      .then((imgData) => {
+        if (imgData.success) {
+          const doctor = {
+            name: data.name,
+            email: data.email,
+            specialty: data.specialty,
+            biodata: data.biodata,
+            experience: data.experience,
+            location: data.location,
+            image: imgData.data.url,
+          };
+
+          // save doctor information to the database
+          fetch("http://localhost:5000/doctors", {
+            method: "POST",
+            headers: {
+              "content-type": "application/json",
+              authorization: `bearer ${localStorage.getItem("accessToken")}`,
+            },
+            body: JSON.stringify(doctor),
+          })
+            .then((res) => res.json())
+            .then((result) => {
+              //  console.log(result);
+              toast.success(`${data.name} is added successfully`);
+              navigate("/dashboard/manage-doctors");
+            });
+        }
+      });
+  };
+
+  if (isLoading) {
+    return <Loading></Loading>;
+  }
+
+  return (
+    <div>
+      <h1 className="text-3xl text-center font-bold text-primary">
+        Add New Doctor
+      </h1>
+      <div className="grid justify-items-center ">
+        <form onSubmit={handleSubmit(handleAddDoctor)}>
+          <div className="form-control w-full max-w-xs ">
+            <label className="label">
+              {" "}
+              <span className="label-text">Name</span>
+            </label>
+            <input
+              type="text"
+              placeholder="Enter Doctor's Name"
+              {...register("name", {
+                required: "Name is Required",
+              })}
+              className="input input-bordered w-full max-w-xs"
+            />
+            {errors.name && (
+              <p className="text-red-500">{errors.name.message}</p>
+            )}
+          </div>
+
+          <div className="form-control w-full max-w-xs">
+            <label className="label">
+              {" "}
+              <span className="label-text">Email</span>
+            </label>
+            <input
+              type="email"
+              placeholder="Enter Doctor's Email"
+              {...register("email", {
+                required: true,
+              })}
+              className="input input-bordered w-full max-w-xs"
+            />
+            {errors.email && (
+              <p className="text-red-500">{errors.email.message}</p>
+            )}
+          </div>
+
+          <div className="form-control w-full max-w-xs">
+            <label className="label">
+              {" "}
+              <span className="label-text">Specialty</span>
+            </label>
+            <select
+              {...register("specialty")}
+              className="select input-bordered w-full max-w-xs"
+            >
+              {specialties.map((specialty) => (
+                <option key={specialty._id} value={specialty.name}>
+                  {specialty.name}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div className="form-control w-full max-w-xs">
+            <label className="label">
+              {" "}
+              <span className="label-text">Location</span>
+            </label>
+            <select
+              {...register("location")}
+              className="select input-bordered w-full max-w-xs"
+            >
+              {locations.map((location) => (
+                <option key={location._id} value={location.name}>
+                  {location.location}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div className="form-control w-full max-w-xs">
+            <label className="label">
+              {" "}
+              <span className="label-text">Years of Experience</span>
+            </label>
+            <input
+              type="text"
+              placeholder="Enter ,How Many years of Experience? "
+              {...register("experience", {
+                required: "Experience is Required",
+              })}
+              className="input input-bordered w-full max-w-xs"
+            />
+            {errors.experience && (
+              <p className="text-red-500">{errors.experience.message}</p>
+            )}
+          </div>
+
+          <div className="form-control w-full max-w-xs">
+            <label className="label">
+              {" "}
+              <span className="label-text">Biodata</span>
+            </label>
+            <input
+              type="text"
+              placeholder="Enter Doctor's Biodata"
+              {...register("biodata", {
+                required: "Biodata is Required",
+              })}
+              className="input input-bordered w-full max-w-xs"
+            />
+            {errors.biodata && (
+              <p className="text-red-500">{errors.biodata.message}</p>
+            )}
+          </div>
+
+          <div className="form-control w-full max-w-xs">
+            <label className="label">
+              {" "}
+              <span className="label-text">Photo</span>
+            </label>
+            <input
+              type="file"
+              {...register("image", {
+                required: "Photo is Required",
+              })}
+              className="input input-bordered w-full max-w-xs"
+            />
+            {errors.img && <p className="text-red-500">{errors.img.message}</p>}
+          </div>
+
+          <input
+            className="btn btn-primary mt-4  w-80"
+            value="Add Doctor"
+            type="submit"
+          />
+        </form>
+      </div>
+    </div>
+  );
+};
+
+export default AddDoctor;
+
+
+
+
+
+///////////////////////////
+
+
+
+
+
+
+
+import React from "react";
+import { useEffect } from "react";
+import { useState } from "react";
 import { useSearchParams } from "react-router-dom";
-const SearchDoctor = () => {
+
+import AllDoctorsCard from "./AllDoctorsCard";
+
+const AllDoctors = () => {
+  // const [doctors, setDoctor] = useState([]);
+  // useEffect(() => {
+  //   fetch("http://localhost:5000/doctors")
+  //     .then((res) => res.json())
+  //     .then((data) => setDoctor(data));
+  // }, []);
+
   const [searchParams, setSearchParams] = useSearchParams();
   const [doctors, setDoctors] = useState([]);
+
   const [searchTerm, setSearchTerm] = useState(
     searchParams.get("search") || ""
   );
@@ -120,18 +300,21 @@ const SearchDoctor = () => {
     setSearchTerm(event.target.value);
     updateSearchParameters({ search: event.target.value });
   };
+
   const handleLocationChange = (event) => {
     setLocation(event.target.value);
     updateSearchParameters({ location: event.target.value });
   };
+
   const updateSearchParameters = (params) => {
     setSearchParams({ ...searchParams, ...params });
   };
+
   useEffect(() => {
     const fetchDoctors = async () => {
       try {
         const response = await fetch(
-          `/search-doctor?search=${searchTerm}&&location=${location}`
+          `http://localhost:5000/search-doctor?search=${searchTerm}&&location=${location}`
         );
         const data = await response.json();
         console.log(data.doctor);
@@ -145,67 +328,78 @@ const SearchDoctor = () => {
   }, [searchTerm, location]);
 
   const filteredDoctors = doctors.filter((doctor) =>
-    doctor.name.toLowerCase().includes(searchTerm.toLowerCase())
+    doctor.specialty.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   return (
-    <div className="container mx-auto p-4">
-      <h1 className="text-3xl font-bold mb-4">Health Connect</h1>
-      <input
-        type="text"
-        placeholder="Search by Speciality"
-        value={searchTerm}
-        onChange={handleSearchChange}
-        className="border p-2 mb-4"
-      />
-      <select
-        value={location}
-        onChange={handleLocationChange}
-        className="border p-2 mb-4"
-      >
-        <option value="">Any Location</option>
-        <option value="Dhaka">Dhaka</option>
-        <option value="Barishal">Barishal</option>
-        <option value="Khulna">Khulna</option>
-        <option value="Rajshahi">Rajshahi</option>
-        <option value="Sylhet">Sylhet</option>
-        <option value="Chittagong">Chittagong</option>
-        <option value="Mymensing">Mymensing</option>
-        <option value="Rangpur">Rangpur</option>
-      </select>
-
-      <h6 ">Doctors List</h6>
-      <table className="min-w-full divide-y divide-gray-200">
-        <tbody>
-          {filteredDoctors.map((doctor) => (
-            <tr key={doctor._id} className="mb-2">
-          
-            <td className="p-2">{doctor.name}</td>
-              <td className="p-2">{doctor.location}</td>
-              <td className="p-2">{doctor.specialty}</td>
-            </tr>
+    <>
+      <div className="container mx-auto p-4 text-right">
+        <h1 className="text-3xl font-bold mb-4 text-end">Search Your Doctor</h1>
+        <input
+          type="text"
+          placeholder="Search by Speciality"
+          value={searchTerm}
+          onChange={handleSearchChange}
+          className="border p-2 mb-4"
+        />
+        <select
+          value={location}
+          onChange={handleLocationChange}
+          className="border p-2 mb-4"
+        >
+          <option value="">Any Location</option>
+          <option value="Dhaka">Dhaka</option>
+          <option value="Barishal">Barishal</option>
+          <option value="Khulna">Khulna</option>
+          <option value="Rajshahi">Rajshahi</option>
+          <option value="Sylhet">Sylhet</option>
+          <option value="Chittagong">Chittagong</option>
+          <option value="Mymensing">Mymensing</option>
+          <option value="Rangpur">Rangpur</option>
+        </select>
+      </div>
+      <div>
+        <div className="text-center mb-4 mt-6">
+          <h2 className="text-5xl font-bold text-cyan-600">All Doctors</h2>
+        </div>
+        <div className="grid gap-6 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
+          {filteredDoctors.map((doc) => (
+            <AllDoctorsCard key={doc._id} doc={doc}></AllDoctorsCard>
           ))}
-        </tbody>
-      </table>
-    </div>
+        </div>
+      </div>
+    </>
   );
 };
 
-export default SearchDoctor;
+export default AllDoctors;
 
+// import React from "react";
+// import { useEffect } from "react";
+// import { useState } from "react";
 
-/////////// Front end close ///////////////
+// import AllDoctorsCard from "./AllDoctorsCard";
 
+// const AllDoctors = () => {
+//   const [doctors, setDoctor] = useState([]);
+//   useEffect(() => {
+//     fetch("http://localhost:5000/doctors")
+//       .then((res) => res.json())
+//       .then((data) => setDoctor(data));
+//   }, []);
 
+//   return (
+//     <div>
+//       <div className="text-center mb-4 mt-6">
+//         <h2 className="text-5xl font-bold text-cyan-600">All Doctors</h2>
+//       </div>
+//       <div className="grid gap-6 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
+//         {doctors.map((doc) => (
+//           <AllDoctorsCard key={doc._id} doc={doc}></AllDoctorsCard>
+//         ))}
+//       </div>
+//     </div>
+//   );
+// };
 
-
-
-
-
-
-
-
-
-
-
-
+// export default AllDoctors;
