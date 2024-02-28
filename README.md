@@ -174,7 +174,7 @@ const SearchDoctor = () => {
         <option value="Rangpur">Rangpur</option>
       </select>
 
-      <h2 className="text-2xl font-bold mb-2">Doctors List</h2>
+      <h6 ">Doctors List</h6>
       <table className="min-w-full divide-y divide-gray-200">
         <tbody>
           {filteredDoctors.map((doctor) => (
