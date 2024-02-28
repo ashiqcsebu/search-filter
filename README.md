@@ -42,7 +42,8 @@
 "specialty": "Urologist",
 "biodata": "MBBS (DMC), MRCS (England), FCPS (Urology). Associate Professor, Department of Urology, Popular Medical College & Hospital, Dhaka.",
 "image": "https://i.ibb.co/G51QQ73/doc8.jpg",
-"experience": 9
+"experience": 9,
+"location" : "Khulna"
 },
 
 
